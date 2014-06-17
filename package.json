@@ -1,0 +1,40 @@
+{
+  "name": "seed-project",
+  "version": "0.0.1",
+  "description": "Basic project",
+  "main": "bin/web-server.js",
+  "bin": {
+    "jeporady": "game-model.js"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "example",
+    "test": "test"
+  },
+  "dependencies": {
+    "express": "*",
+    "requirejs": "*",
+    "nodemailer": "*",
+    "socket.io": "*"
+  },
+  "devDependencies": {
+    "grunt": "*",
+    "grunt-contrib-jshint": "*",
+    "grunt-contrib-nodeunit": "*",
+    "grunt-contrib-uglify": "*",
+    "should": "*"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/PTihomir/  change url"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PTihomir/ change url"
+  },
+  "homepage": "https://github.com/PTihomir/ change url"
+}
