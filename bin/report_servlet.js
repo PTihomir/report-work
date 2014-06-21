@@ -6,7 +6,6 @@ var nodemailer = require('nodemailer'),
     fs = require('fs'),
     file = __dirname + '/config.json',
     mu = require('mustache'),
-    util = require('util'),
     config;
 
 fs.readFile(file, 'utf8', function (err, data) {
@@ -31,8 +30,6 @@ function ReportServlet() {
         handler: this.sendStatus
     }];
 
-  // Returns nil
-  // Callback (err, CompiledTemplate)
 }
 
 ReportServlet.prototype.handleRequest = function(req, res) {
@@ -108,9 +105,6 @@ ReportServlet.prototype.sendMail = function (data) {
 
         subject = mu.render(config.templates.title, data.entries[i]);
         messagebody = mu.render(config.templates.body, data.entries[i]);
-
-        console.log(subject);
-        console.log(messagebody);
 
         message = {
             from: config.from,
