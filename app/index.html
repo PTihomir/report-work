@@ -13,8 +13,8 @@
         <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
 
        <!--  <link rel="stylesheet" href="css/normalize.css"> -->
-        <link rel="stylesheet" href="css/bootstrap.css">
         <link rel="stylesheet" href="css/base.css">
+        <link rel="stylesheet" href="lib/bootstrap-datepicker/1.2.0/css/datepicker.css">
        <!-- <link rel="stylesheet" href="css/main.css">-->
       <!--  <script src="lib/jquery/modernizr-2.6.2.min.js"></script>-->
     </head>
@@ -23,27 +23,45 @@
             <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
 
-        <nav class="navbar">
-            <div class="navbar-inner">
-                <a class="brand" href="#">Seed project</a>
-                <ul class="nav">
-                    <li><a href="#">Option 1</a></li>
-                    <li><a href="#">Option 2</a></li>
-                    <li><a href="#">Option 3</a></li>
-                </ul>
-            </div>
-        </nav>
+        <div class="message">
+
+        </div>
 
         <div class="container">
             <div class="row">
+                <form role="form" class="form-inline">
+                    <div class="form-group">
+                        <label>Mailto:<input class="form-control email" type="email" placeholder="report@wedoqa.com"></label>
+                    </div>
+                    <div class="entries">
+                        <div class="form-group entry">
+                            <label class="">Date:</label>
+                            <input class="form-control date" type="date">
+                            <label class="">Hour:</label>
+                            <input class=" form-control hour" type="number" value="8">
+                            <label class="">Tasks:</label>
+                            <input class=" form-control tasks" type="text" placeholder="Grunt this;Modify that;Bugfix everything">
+                            <a href="#" class="btn btn-danger delete-entry">Remove</a>
+                        </div>
+                        <a href="#" class="btn btn-warning new-entry">New Entry</a>
+                    </div>
+                    <a href="#" class="btn btn-primary start">Start</a>
+                </form>
+            </div>
+            <div class="server-status">
 
             </div>
 
         </div>
 
+
+
         <!-- Library files -->
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="lib/jquery/1.10.2/jquery-1.10.2.min.js"><\/script>')</script>
+        <script src="lib/bootstrap-datepicker/1.2.0/js/bootstrap-datepicker.min.js"></script>
+        <script src="lib/moment.js/2.2.1/moment+langs.min.js"></script>
+
         <!-- <script src='https://cdn.firebase.com/v0/firebase.js'></script> -->
         <!-- <script src="lib/angular/1.2.0/angular.js"></script> -->
         <!-- <script src="lib/firebase/angularfire.js"></script> -->
@@ -52,6 +70,7 @@
         <script src="js/plugins.js"></script>
 
         <!-- Project files -->
+        <script src="js/main.js"></script>
 
     </body>
 </html>

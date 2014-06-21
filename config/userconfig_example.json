@@ -1,0 +1,13 @@
+{
+    "service": "Gmail",
+    "auth": {
+        "user": "JohnDoe",
+        "pass": "****"
+    },
+    "defaultFrom": "JohnDoe@gmail.com",
+    "defaultTo": "JohnDoe@gmail.com",
+    "templates": {
+        "title": "Report {{date}} {{hour}}h",
+        "body": "---"
+    }
+}

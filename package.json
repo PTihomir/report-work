@@ -15,7 +15,8 @@
     "express": "*",
     "requirejs": "*",
     "nodemailer": "*",
-    "socket.io": "*"
+    "socket.io": "*",
+    "mu2": "*"
   },
   "devDependencies": {
     "grunt": "*",

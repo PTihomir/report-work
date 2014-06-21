@@ -4,16 +4,19 @@ var util = require('util'),
     http = require('http'),
     fs = require('fs'),
     url = require('url'),
-    events = require('events');
+    ReportServlet = require('./report_servlet.js');
 
-var DEFAULT_PORT = 3000;
+var DEFAULT_PORT = 3111;
+
+var defaultPage = 'app/index.html';
 
 function main(argv) {
+
     new HttpServer({
         'GET': createServlet(StaticServlet),
-        'HEAD': createServlet(StaticServlet)
+        'HEAD': createServlet(StaticServlet),
+        'POST': createServlet(ReportServlet)
     }).start(Number(argv[2]) || DEFAULT_PORT);
-
 }
 
 function escapeHtml(value) {
@@ -95,17 +98,22 @@ StaticServlet.MimeMap = {
 };
 
 StaticServlet.prototype.handleRequest = function(req, res) {
+
     var self = this;
     var path = ('./' + req.url.pathname).replace('//','/').replace(/%(..)/g, function(match, hex){
        return String.fromCharCode(parseInt(hex, 16));
     });
 
-
     var parts = path.split('/');
-    if (parts[parts.length-1].charAt(0) === '.')
+    if (parts[parts.length-1].charAt(0) === '.') {
+
       return self.sendForbidden_(req, res, path);
-    if (parts.length === 2 && parts[1] === '')
-      return self.sendFile_(req, res, path + 'app/index.html');
+    }
+    if (parts.length === 2 && parts[1] === '') {
+        parts[1] = defaultPage;
+        return self.sendRedirect_(req, res, parts.join('/'));
+      // return self.sendFile_(req, res, path + 'app/index.html');
+    }
 
     fs.stat(path, function(err, stat) {
         if (err)
