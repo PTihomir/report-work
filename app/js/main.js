@@ -23,10 +23,15 @@ $(document).ready(function () {
             .clone()
             .insertBefore($('.new-entry'));
 
-        newEntry.find('.date').datepicker({
-            format: 'dd/mm/yyyy',
-            weekStart: 1
-        }).datepicker('setValue', new Date());
+        newEntry.find('.date')
+            .on('click', function (e) {
+                e.preventDefault();
+            })
+            .datepicker({
+                format: 'dd/mm/yyyy',
+                weekStart: 1
+            })
+            .datepicker('setValue', new Date());
 
         newEntry.find('.hour').val(8);
 
@@ -78,6 +83,13 @@ $(document).ready(function () {
                     task: $element.find('.tasks').val().split(';')
                 };
 
+            entry.task = $.map(entry.task, function (element) {
+                element = element.trim();
+                if (!!element) {
+                    return element;
+                }
+            });
+
             if (dateCache[entry.date]) {
                 validData = false;
                 dateCache[entry.date].find('.date').addClass('validation-error');
@@ -99,10 +111,22 @@ $(document).ready(function () {
             return;
         }
 
+        showMessage('Sending mails...');
+
         $.ajax('report', {
             type: 'POST',
             dataType: 'json',
             data: JSON.stringify(data)
+        })
+        .done(function (data) {
+            if (data.status) {
+                showMessage('Sending mails OK');
+            } else {
+                showMessage('Sending mails FAILED');
+            }
+        })
+        .fail(function () {
+            showMessage('Server error...');
         });
     },
 

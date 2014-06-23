@@ -2,6 +2,10 @@
 @import "main.css";
 @import "../lib/bootstrap/3.0.3/css/bootstrap.css";
 @import "../lib/bootstrap/3.0.3/css/bootstrap-theme.css";
+.message {
+  font-size: 1.3em;
+  margin: 20px;
+}
 .new-entry {
   margin: 10px 0;
 }

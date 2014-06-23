@@ -77,13 +77,16 @@ ReportServlet.prototype.sendReport = function(req, res) {
     .on('end', function () {
         var post = JSON.parse(body.join(''));
 
-        that.sendMail(post);
-
-        res.end();
+        that.sendMail(post, function (success) {
+            res.write(JSON.stringify({
+                status: success
+            }));
+            res.end();
+        });
     });
 };
 
-ReportServlet.prototype.sendMail = function (data) {
+ReportServlet.prototype.sendMail = function (data, done) {
 
     // create reusable transport method (opens pool of SMTP connections)
     var smtpTransport = nodemailer.createTransport('SMTP',{
@@ -98,7 +101,8 @@ ReportServlet.prototype.sendMail = function (data) {
     var message,
         counter = 0,
         subject,
-        messagebody;
+        messagebody,
+        success = true;
 
     for (var i = 0; i < data.entries.length; i++) {
 
@@ -117,6 +121,7 @@ ReportServlet.prototype.sendMail = function (data) {
 
             counter += 1;
             if(error){
+                success = false;
                 console.log(error);
             }else{
                 console.log('Message sent: ' + response.message);
@@ -126,6 +131,9 @@ ReportServlet.prototype.sendMail = function (data) {
             if (counter === data.entries.length){
                 smtpTransport.close(); // shut down the connection pool, no more messages
                 console.log('All messages sent.');
+                if (done) {
+                    done(success);
+                }
             }
         });
     }
