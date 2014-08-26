@@ -8,6 +8,8 @@ var nodemailer = require('nodemailer'),
     mu = require('mustache'),
     config;
 
+var Spreadsheet = require('edit-google-spreadsheet');
+
 fs.readFile(file, 'utf8', function (err, data) {
   if (err) {
     console.log('Error: ' + err);
@@ -77,12 +79,24 @@ ReportServlet.prototype.sendReport = function(req, res) {
     .on('end', function () {
         var post = JSON.parse(body.join(''));
 
-        that.sendMail(post, function (success) {
-            res.write(JSON.stringify({
-                status: success
-            }));
-            res.end();
+        that.sendDataToDocs(post, function (err) {
+            if (err) {
+                res.write(JSON.stringify({
+                    status: false
+                }));
+                res.end();
+                return;
+            }
+
+            that.sendMail(post, function (success) {
+                res.write(JSON.stringify({
+                    status: success
+                }));
+                res.end();
+            });
         });
+
+
     });
 };
 
@@ -137,6 +151,95 @@ ReportServlet.prototype.sendMail = function (data, done) {
             }
         });
     }
+
+};
+
+ReportServlet.prototype.sendDataToDocs = function (data, done) {
+
+    // create reusable transport method (opens pool of SMTP connections)
+    //https://docs.google.com/a/alasdoo.com/spreadsheet/ccc?key=0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE&usp=sharing
+    // https://docs.google.com/a/alasdoo.com/spreadsheets/d/151fjUIesb3gPBtHvOnxjI8dK5rgxaf45ySVi__z6yZI/edit?usp=sharing
+    Spreadsheet.load({
+        debug: true,
+        spreadsheetId: '0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE',
+        worksheetName: 'WorkingHours',
+        oauth : {
+            email: '886016146227-7fh037377hjj90e2ki5dokt19099ajs4@developer.gserviceaccount.com',
+            keyFile: __dirname + '/alasdoo-key-final.pem'
+        }
+
+    }, function sheetReady(err, spreadsheet) {
+
+        if (err) {
+            throw err;
+        }
+
+        spreadsheet.receive(function(err, rows, info) {
+            if (err) {
+                throw err;
+            }
+
+            // console.log('Rows', rows);
+            // console.log('Info', info);
+
+            var sendData = {},
+                entry,
+                nextRow = info.nextRow,
+                processed,
+                dateTokens,
+                formatedDate;
+
+            for (var i = 0; i < data.entries.length; i++) {
+                entry = data.entries[i];
+                processed = false;
+
+                dateTokens = entry.date.split('/');
+                formatedDate = [dateTokens[1], dateTokens[0], dateTokens[2]].join('/');
+
+                for (var j = info.lastRow; j > Math.max(0, info.lastRow - 31); j--) {
+                    if (typeof rows[j] === 'undefined') {
+                        continue;
+                    }
+
+                    if (new Date(rows[j]['1']).getTime() === new Date(formatedDate).getTime()) {
+
+                        sendData[j] = {
+                            '2': entry.task.join(';')
+                        };
+
+                        if (!rows[j]['3']) {
+                            sendData[j]['3'] = entry.hour;
+                        } else if (rows[j]['3'] != entry.hour) {
+                            console.warn(('For ' + formatedDate + ' the old and the new hour is different.').red, rows[j][3], '->', entry.hour);
+                        }
+
+                        processed = true;
+                        break;
+                    }
+                }
+
+                if (!processed) {
+                    sendData[nextRow++] = [[formatedDate, entry.task.join(';'), entry.hour]];
+                }
+            }
+
+            spreadsheet.add(sendData);
+
+            console.log('Send data:'.green);
+            console.log(sendData);
+
+            spreadsheet.send(function(err) {
+                if(err) throw err;
+                console.log("Updated Success!".blue);
+
+                if (done) {
+                    done();
+                }
+            });
+
+        });
+
+    });
 
 };
 

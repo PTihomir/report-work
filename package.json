@@ -3,17 +3,17 @@
   "version": "0.0.2",
   "description": "Basic project for sending reports of my work",
   "main": "bin/web-server.js",
-  "bin": {
-  },
+  "bin": {},
   "directories": {
     "doc": "docs"
   },
   "dependencies": {
+    "edit-google-spreadsheet": "^0.2.7",
     "express": "*",
-    "requirejs": "*",
+    "mustache": "*",
     "nodemailer": "*",
-    "socket.io": "*",
-    "mustache": "*"
+    "requirejs": "*",
+    "socket.io": "*"
   },
   "devDependencies": {
     "grunt": "*",
