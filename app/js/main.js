@@ -156,6 +156,10 @@ $(document).ready(function () {
                     .removeClass('ok')
                     .text('Server in error state\t' + moment().format('H:mm:ss'));
             }
+
+            if (data.rows) {
+
+            }
         })
         .fail(function () {
             $('.server-status')

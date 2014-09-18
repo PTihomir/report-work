@@ -6,7 +6,7 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Seed page</title>
+        <title>Report to Alasdoo</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -17,40 +17,51 @@
       <!--  <script src="lib/jquery/modernizr-2.6.2.min.js"></script>-->
     </head>
     <body>
-        <!--[if lt IE 7]>
-            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-        <![endif]-->
 
-        <div class="message">
+        <script type="text/x-handlebars"  data-template-name="index">
+            <div class="message">
+                {{message}}
+            </div>
 
-        </div>
-
-        <div class="container">
-            <div class="row">
-                <form role="form" class="form-inline">
-                    <div class="form-group">
-                        <label>Mailto:<input class="form-control email" type="email" placeholder="report@wedoqa.com"></label>
-                    </div>
-                    <div class="entries">
-                        <div class="form-group entry">
-                            <label class="">Date:</label>
-                            <input class="form-control date" type="text">
-                            <label class="">Hour:</label>
-                            <input class=" form-control hour" type="number" value="8">
-                            <label class="">Tasks:</label>
-                            <input class=" form-control tasks" type="text" placeholder="Grunt this;Modify that;Bugfix everything">
-                            <a href="#" class="btn btn-danger delete-entry">Remove</a>
+            <div class="container">
+                <div class="row">
+                    <form role="form" class="form-inline">
+                        <div class="form-group">
+                            <label>Mailto:
+                            {{input type="email" placeholder="report@wedoqa.com" value=mailto class="form-control email"}}
+                            </label>
                         </div>
-                        <a href="#" class="btn btn-warning new-entry">New Entry</a>
-                    </div>
-                    <a href="#" class="btn btn-primary start">Start</a>
-                </form>
-            </div>
-            <div class="server-status">
+                        <div class="entries">
+                            {{#each report in reports}}
+                            <div class="form-group entry">
+                                <label class="">Date:</label>
+                                {{view Alasdoo.DateField value=report.date class="form-control date"}}
+
+                                <!-- {{input type="date" placeholder="Date" value=report.date class="form-control date"}} -->
+                                <label class="">Hour:</label>
+                                {{input type="number" placeholder="Date" value=report.hour class="form-control hour"}}
+                                <label class="">Tasks:</label>
+                                {{input type="text" placeholder="Grunt this;Modify that;Bugfix everything" value=report.task class="form-control tasks"}}
+                                <button href="#" class="btn btn-danger delete-entry" {{action 'delete' report}}>Remove</button>
+                            </div>
+                            {{/each}}
+                            <button class="btn btn-warning new-entry" {{action 'newreport'}}>New Entry</button>
+                        </div>
+                        <button class="btn btn-primary start" {{action 'sendreport'}}>Send reports</button>
+                    </form>
+                </div>
+                <div {{bind-attr class="serverError:error:ok :server-status"}}>
+                    {{serverMessage}}
+                </div>
+
+                <ul>
+                    {{#each report in oldReports}}
+                        <li>{{report.date}} - {{report.hour}}h - {{report.task}}</li>
+                    {{/each}}
+                </ul>
 
             </div>
-
-        </div>
+        </script>
 
 
 
@@ -60,6 +71,10 @@
         <script src="lib/bootstrap-datepicker/1.2.0/js/bootstrap-datepicker.min.js"></script>
         <script src="lib/moment.js/2.2.1/moment+langs.min.js"></script>
 
+        <script src="lib/handlebars/1.0.0/handlebars-1.0.0.js"></script>
+        <script src="lib/ember/1.6.0-beta.2/ember.js"></script>
+
+
         <!-- <script src='https://cdn.firebase.com/v0/firebase.js'></script> -->
         <!-- <script src="lib/angular/1.2.0/angular.js"></script> -->
         <!-- <script src="lib/firebase/angularfire.js"></script> -->
@@ -68,7 +83,9 @@
         <script src="js/plugins.js"></script>
 
         <!-- Project files -->
-        <script src="js/main.js"></script>
+        <script src="js/application.js"></script>
+        <script src="js/route.js"></script>
+        <script src="js/controllers/index-controller.js"></script>
 
     </body>
 </html>

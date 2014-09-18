@@ -9,5 +9,11 @@
     "templates": {
         "title": "Report {{date}} {{hour}}h",
         "body": "---"
+    },
+    "spreadsheetId": "",
+    "worksheetName": "",
+    "oauth" : {
+        "email": "",
+        "keyFile": ""
     }
 }

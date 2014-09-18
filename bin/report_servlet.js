@@ -3,6 +3,7 @@
  */
 'use strict';
 var nodemailer = require('nodemailer'),
+    url = require('url'),
     fs = require('fs'),
     file = __dirname + '/config.json',
     mu = require('mustache'),
@@ -10,19 +11,9 @@ var nodemailer = require('nodemailer'),
 
 var Spreadsheet = require('edit-google-spreadsheet');
 
-fs.readFile(file, 'utf8', function (err, data) {
-  if (err) {
-    console.log('Error: ' + err);
-    console.info('Create symlink in ./bin to ./config/<custom_config>.json');
-    process.exit(1);
-    return;
-  }
-
-  config = JSON.parse(data);
-
-});
-
 function ReportServlet() {
+
+    var _this = this;
 
     this.handlers = [{
         regexp: /app\/report/i,
@@ -31,6 +22,26 @@ function ReportServlet() {
         regexp: /app\/status/i,
         handler: this.sendStatus
     }];
+
+    this.docsData = {
+        info: null,
+        rows: null,
+        stale: true
+    };
+
+    fs.readFile(file, 'utf8', function (err, data) {
+      if (err) {
+        console.log('Error: ' + err);
+        console.info('Create symlink in ./bin to ./config/<custom_config>.json');
+        process.exit(1);
+        return;
+      }
+
+      config = JSON.parse(data);
+
+      _this.fetchDataFromDocs();
+    });
+
 
 }
 
@@ -53,9 +64,26 @@ ReportServlet.prototype.handleRequest = function(req, res) {
 
 ReportServlet.prototype.sendStatus = function(req, res) {
 
-    res.write(JSON.stringify({
+    var url_parts = url.parse(req.url, true);
+    var query = url_parts.query;
+
+    var response = {
         status: true
-    }));
+    };
+
+    if (!this.docsData.stale || query.force === 'yes') {
+        response.rows = [];
+        for( var i = this.docsData.info.lastRow; i > 0 && i > this.docsData.info.lastRow - 10; i--) {
+            response.rows.push({
+                date: this.docsData.rows[i][1],
+                hour: this.docsData.rows[i][3],
+                task: this.docsData.rows[i][2]
+            });
+        }
+        this.docsData.stale = true;
+    }
+
+    res.write(JSON.stringify(response));
     res.end();
 };
 
@@ -93,6 +121,7 @@ ReportServlet.prototype.sendReport = function(req, res) {
                     status: success
                 }));
                 res.end();
+                that.fetchDataFromDocs();
             });
         });
 
@@ -154,18 +183,19 @@ ReportServlet.prototype.sendMail = function (data, done) {
 
 };
 
-ReportServlet.prototype.sendDataToDocs = function (data, done) {
+ReportServlet.prototype.fetchDataFromDocs = function (done) {
+
+    var _this = this;
 
     // create reusable transport method (opens pool of SMTP connections)
-    //https://docs.google.com/a/alasdoo.com/spreadsheet/ccc?key=0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE&usp=sharing
-    // https://docs.google.com/a/alasdoo.com/spreadsheets/d/151fjUIesb3gPBtHvOnxjI8dK5rgxaf45ySVi__z6yZI/edit?usp=sharing
     Spreadsheet.load({
         debug: true,
-        spreadsheetId: '0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE',
-        worksheetName: 'WorkingHours',
+
+        spreadsheetId: config.spreadsheetId,
+        worksheetName: config.worksheetName,
         oauth : {
-            email: '886016146227-7fh037377hjj90e2ki5dokt19099ajs4@developer.gserviceaccount.com',
-            keyFile: __dirname + '/alasdoo-key-final.pem'
+            email: config.oauth.email,
+            keyFile: __dirname + config.oauth.keyFile
         }
 
     }, function sheetReady(err, spreadsheet) {
@@ -179,64 +209,96 @@ ReportServlet.prototype.sendDataToDocs = function (data, done) {
                 throw err;
             }
 
-            // console.log('Rows', rows);
-            // console.log('Info', info);
+            _this.docsData.rows = rows;
+            _this.docsData.info = info;
+            _this.docsData.stale = false;
 
-            var sendData = {},
-                entry,
-                nextRow = info.nextRow,
-                processed,
-                dateTokens,
-                formatedDate;
+            if (done) {
+                done();
+            }
 
-            for (var i = 0; i < data.entries.length; i++) {
-                entry = data.entries[i];
-                processed = false;
+        });
 
-                dateTokens = entry.date.split('/');
-                formatedDate = [dateTokens[1], dateTokens[0], dateTokens[2]].join('/');
+    });
 
-                for (var j = info.lastRow; j > Math.max(0, info.lastRow - 31); j--) {
-                    if (typeof rows[j] === 'undefined') {
-                        continue;
-                    }
+};
 
-                    if (new Date(rows[j]['1']).getTime() === new Date(formatedDate).getTime()) {
 
-                        sendData[j] = {
-                            '2': entry.task.join(';')
-                        };
+ReportServlet.prototype.sendDataToDocs = function (data, done) {
 
-                        if (!rows[j]['3']) {
-                            sendData[j]['3'] = entry.hour;
-                        } else if (rows[j]['3'] != entry.hour) {
-                            console.warn(('For ' + formatedDate + ' the old and the new hour is different.').red, rows[j][3], '->', entry.hour);
-                        }
+    var _this = this;
 
-                        processed = true;
-                        break;
-                    }
+    // create reusable transport method (opens pool of SMTP connections)
+    //https://docs.google.com/a/alasdoo.com/spreadsheet/ccc?key=0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE&usp=sharing
+    // https://docs.google.com/a/alasdoo.com/spreadsheets/d/151fjUIesb3gPBtHvOnxjI8dK5rgxaf45ySVi__z6yZI/edit?usp=sharing
+    Spreadsheet.load({
+        debug: true,
+        spreadsheetId: config.spreadsheetId,
+        worksheetName: config.worksheetName,
+        oauth : {
+            email: config.oauth.email,
+            keyFile: __dirname + config.oauth.keyFile
+        }
+
+    }, function sheetReady(err, spreadsheet) {
+
+        if (err) {
+            throw err;
+        }
+
+        var sendData = {},
+            entry,
+            nextRow = _this.docsData.info.nextRow,
+            processed,
+            dateTokens,
+            formatedDate;
+
+        for (var i = 0; i < data.entries.length; i++) {
+            entry = data.entries[i];
+            processed = false;
+
+            dateTokens = entry.date.split('/');
+            formatedDate = [dateTokens[1], dateTokens[0], dateTokens[2]].join('/');
+
+            for (var j = _this.docsData.info.lastRow; j > Math.max(0, _this.docsData.info.lastRow - 31); j--) {
+                if (typeof _this.docsData.rows[j] === 'undefined') {
+                    continue;
                 }
 
-                if (!processed) {
-                    sendData[nextRow++] = [[formatedDate, entry.task.join(';'), entry.hour]];
+                if (new Date(_this.docsData.rows[j]['1']).getTime() === new Date(formatedDate).getTime()) {
+
+                    sendData[j] = {
+                        '2': entry.task.join(';')
+                    };
+
+                    if (!_this.docsData.rows[j]['3']) {
+                        sendData[j]['3'] = entry.hour;
+                    } else if (_this.docsData.rows[j]['3'] != entry.hour) {
+                        console.warn(('For ' + formatedDate + ' the old and the new hour is different.').red, _this.docsData.rows[j][3], '->', entry.hour);
+                    }
+
+                    processed = true;
+                    break;
                 }
             }
 
-            spreadsheet.add(sendData);
+            if (!processed) {
+                sendData[nextRow++] = [[formatedDate, entry.task.join(';'), entry.hour]];
+            }
+        }
 
-            console.log('Send data:'.green);
-            console.log(sendData);
+        spreadsheet.add(sendData);
 
-            spreadsheet.send(function(err) {
-                if(err) throw err;
-                console.log("Updated Success!".blue);
+        console.log('Send data:'.green);
+        console.log(sendData);
 
-                if (done) {
-                    done();
-                }
-            });
+        spreadsheet.send(function(err) {
+            if(err) throw err;
+            console.log('Updated Success!'.blue);
 
+            if (done) {
+                done();
+            }
         });
 
     });
