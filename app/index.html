@@ -28,7 +28,7 @@
                     <form role="form" class="form-inline">
                         <div class="form-group">
                             <label>Mailto:
-                            {{input type="email" placeholder="report@wedoqa.com" value=mailto class="form-control email"}}
+                            {{input type="email" placeholder=defaultMailto value=mailto class="form-control email"}}
                             </label>
                         </div>
                         <div class="entries">
@@ -53,6 +53,11 @@
                 <div {{bind-attr class="serverError:error:ok :server-status"}}>
                     {{serverMessage}}
                 </div>
+
+                <a {{bind-attr href="defaultUrl"}} target="_blank">
+                    Check spreadsheet...
+                </a>
+
 
                 <ul>
                     {{#each report in oldReports}}

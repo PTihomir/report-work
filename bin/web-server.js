@@ -112,7 +112,6 @@ StaticServlet.prototype.handleRequest = function(req, res) {
     if (parts.length === 2 && parts[1] === '') {
         parts[1] = defaultPage;
         return self.sendRedirect_(req, res, parts.join('/'));
-      // return self.sendFile_(req, res, path + 'app/index.html');
     }
 
     fs.stat(path, function(err, stat) {

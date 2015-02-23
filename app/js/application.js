@@ -33,7 +33,7 @@
     });
 
     Alasdoo.DateField = Ember.TextField.extend({
-        type: 'date',
+        type: 'text',
         // date: function(key, date) {
         //     if (date) {
         //         this.set('value', date.toISOString().substring(0, 10));
@@ -58,7 +58,12 @@
 
         initWidget: function () {
 
-        }.on('didInsertElement')
+        }.on('didInsertElement'),
+
+        startValue: function (aaa) {
+            debugger;
+
+        }.property()
     });
 
 }(window.Ember));

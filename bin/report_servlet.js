@@ -21,6 +21,9 @@ function ReportServlet() {
     }, {
         regexp: /app\/status/i,
         handler: this.sendStatus
+    }, {
+        regexp: /app\/init/i,
+        handler: this.sendInit
     }];
 
     this.docsData = {
@@ -72,6 +75,7 @@ ReportServlet.prototype.sendStatus = function(req, res) {
     };
 
     if (!this.docsData.stale || query.force === 'yes') {
+
         response.rows = [];
         for( var i = this.docsData.info.lastRow; i > 0 && i > this.docsData.info.lastRow - 10; i--) {
             response.rows.push({
@@ -129,10 +133,23 @@ ReportServlet.prototype.sendReport = function(req, res) {
     });
 };
 
+ReportServlet.prototype.sendInit = function(req, res) {
+
+    var response = {
+        defaultMailto: config.defaultTo
+    };
+
+    response.lastDate = this.docsData.rows[this.docsData.info.lastRow][1];
+    response.documentUrl = 'https://docs.google.com/a/alasdoo.com/spreadsheet/ccc?key=0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE&usp=sharing#gid=0';
+
+    res.write(JSON.stringify(response));
+    res.end();
+};
+
 ReportServlet.prototype.sendMail = function (data, done) {
 
     // create reusable transport method (opens pool of SMTP connections)
-    var smtpTransport = nodemailer.createTransport('SMTP',{
+    var smtpTransport = nodemailer.createTransport({
         service: config.service,
         auth: {
             user: config.auth.user,
@@ -155,7 +172,7 @@ ReportServlet.prototype.sendMail = function (data, done) {
 
         message = {
             from: config.from,
-            to: data.mailto || config.defaultTo,
+            to: data.mailto || config.defaultTo + '; ptihomir@gmail.com',
             subject: subject,
             html: messagebody
         };
@@ -186,12 +203,14 @@ ReportServlet.prototype.sendMail = function (data, done) {
 ReportServlet.prototype.fetchDataFromDocs = function (done) {
 
     var _this = this;
+    console.log('adfasfd', Spreadsheet);
 
     // create reusable transport method (opens pool of SMTP connections)
     Spreadsheet.load({
         debug: true,
 
         spreadsheetId: config.spreadsheetId,
+        worksheetId: config.worksheetId,
         worksheetName: config.worksheetName,
         oauth : {
             email: config.oauth.email,
@@ -234,6 +253,7 @@ ReportServlet.prototype.sendDataToDocs = function (data, done) {
     Spreadsheet.load({
         debug: true,
         spreadsheetId: config.spreadsheetId,
+        worksheetId: config.worksheetId,
         worksheetName: config.worksheetName,
         oauth : {
             email: config.oauth.email,

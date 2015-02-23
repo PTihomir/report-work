@@ -12,6 +12,7 @@
     "express": "*",
     "mustache": "*",
     "nodemailer": "*",
+    "nodemailer-smtp-transport": "^0.1.13",
     "requirejs": "*",
     "socket.io": "*"
   },

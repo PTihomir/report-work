@@ -15,9 +15,18 @@
                 var _this = this,
                     data = {
                         mailto: this.get('model.mailto')
-                    };
+                    },
+                    dates = {};
 
-                data.entries = this.get('model.reports').map(function (element) {
+                data.entries = this.get('model.reports')
+                    .filter(function (element) {
+                        if (!element.task) {
+                            return false;
+                        }
+                        return true;
+                    })
+                    .map(function (element) {
+
                     var entry = {
                         date: element.date,
                         hour: parseInt(element.hour),
@@ -39,6 +48,26 @@
 
                     return entry;
                 });
+
+                // check duplicate dates
+                var hasDuplicates = data.entries.any(function (element) {
+                    if (dates[element.date]) {
+                        return true;
+                    }
+
+                    dates[element.date] = true;
+                    return false;
+                });
+
+                if (hasDuplicates) {
+                    this.showMessage('Duplicate date found. Check and run again.');
+                    return;
+                }
+
+                if (data.entries.length === 0) {
+                    this.showMessage('None of entries is correct. Check and run again.');
+                    return;
+                }
 
                 this.showMessage('Sending mails...');
 
@@ -101,8 +130,35 @@
             });
         },
 
+        _initFromServer: function () {
+            var _this = this;
+
+            $.ajax('init', {
+                type: 'POST',
+                dataType: 'json',
+                cache: false,
+            })
+            .done(function (data) {
+                _this.set('model.defaultMailto', data.defaultMailto);
+                _this.set('model.defaultUrl', data.documentUrl);
+
+                //window._model.reports
+
+                if (data.lastDate) {
+                    _this.set('model.initDate', moment(data.lastDate).add(1, 'days').format('dd/mm/yyyy'));
+                    // _this.get('model.reports')[0].date = _this.get('model.initDate');
+                }
+            })
+            .fail(function () {
+                _this.setServerResponse('Server communication error\t' + moment().format('H:mm:ss'), true);
+            });
+        },
+
         init: function () {
             var _this = this;
+
+            _this._initFromServer();
+
             setInterval(function () {
                 _this._pingServer();
             }, 5000);

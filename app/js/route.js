@@ -8,12 +8,12 @@
     Alasdoo.IndexRoute = Ember.Route.extend({
         setupController: function(controller, model) {
             this._super(controller, model);
-            // controller.set('pendingAuths', this.store.find('pending-auths'));
         },
 
         model: function () {
             window._model = {
                 message: null,
+                defaultMailto: 'report@wedoqa.com',
                 reports: [{
                     date: null,
                     hour: 8,
