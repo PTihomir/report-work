@@ -9,6 +9,8 @@ var nodemailer = require('nodemailer'),
     mu = require('mustache'),
     config;
 
+    require("colors");
+
 var Spreadsheet = require('edit-google-spreadsheet');
 
 function ReportServlet() {
@@ -150,15 +152,14 @@ ReportServlet.prototype.sendMail = function (data, done) {
 
     // create reusable transport method (opens pool of SMTP connections)
     var smtpTransport = nodemailer.createTransport({
-        service: config.service,
-        auth: {
-            user: config.auth.user,
-            pass: config.auth.pass
-        }
-    });
-
-    // send mail with defined transport object
-    var message,
+            service: config.service,
+            auth: {
+                user: config.auth.user,
+                pass: config.auth.pass
+            }
+        }),
+        // send mail with defined transport object
+        message,
         counter = 0,
         subject,
         messagebody,
@@ -166,13 +167,12 @@ ReportServlet.prototype.sendMail = function (data, done) {
 
     for (var i = 0; i < data.entries.length; i++) {
 
-
         subject = mu.render(config.templates.title, data.entries[i]);
         messagebody = mu.render(config.templates.body, data.entries[i]);
 
         message = {
-            from: config.from,
-            to: data.mailto || config.defaultTo + '; ptihomir@gmail.com',
+            from: config.defaultFrom,
+            to: (data.mailto || config.defaultTo),
             subject: subject,
             html: messagebody
         };
@@ -187,10 +187,13 @@ ReportServlet.prototype.sendMail = function (data, done) {
                 console.log('Message sent: ' + response.message);
             }
 
-            // if you don't want to use this transport object anymore, uncomment following line
             if (counter === data.entries.length){
                 smtpTransport.close(); // shut down the connection pool, no more messages
-                console.log('All messages sent.');
+                if (success) {
+                    console.log('All messages sent.'.green);
+                } else {
+                    console.log('All messages sent, but with error.'.yellow);
+                }
                 if (done) {
                     done(success);
                 }
@@ -203,8 +206,6 @@ ReportServlet.prototype.sendMail = function (data, done) {
 ReportServlet.prototype.fetchDataFromDocs = function (done) {
 
     var _this = this;
-    console.log('adfasfd', Spreadsheet);
-
     // create reusable transport method (opens pool of SMTP connections)
     Spreadsheet.load({
         debug: true,
@@ -248,8 +249,6 @@ ReportServlet.prototype.sendDataToDocs = function (data, done) {
     var _this = this;
 
     // create reusable transport method (opens pool of SMTP connections)
-    //https://docs.google.com/a/alasdoo.com/spreadsheet/ccc?key=0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE&usp=sharing
-    // https://docs.google.com/a/alasdoo.com/spreadsheets/d/151fjUIesb3gPBtHvOnxjI8dK5rgxaf45ySVi__z6yZI/edit?usp=sharing
     Spreadsheet.load({
         debug: true,
         spreadsheetId: config.spreadsheetId,
