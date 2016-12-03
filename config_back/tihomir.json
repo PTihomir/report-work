@@ -1,0 +1,26 @@
+{
+    "service": "gmail",
+    "auth": {
+        "user": "tihomir@alasdoo.com",
+        "pass": "wqmesvhnotadjhao"
+    },
+    "authBak": {
+        "user": "ptihomir@gmail.com",
+        "pass": "rkwstsilfkzylrkr"
+    },
+    "defaultFrom": "tihomir@alasdoo.com",
+    "defaultToBak": "test-tihomir2@googlegroups.com",
+    "defaultTo": "report@wedoqa.com",
+    "templates": {
+        "title": "DailyReport for {{&date}} {{&hour}}h",
+        "body": "Hello,<br/><ul>{{#task}}<li>{{.}}</li>{{/task}}</ul><br/>Regards,<br/>Tihomir Popov"
+    },
+    "spreadsheetId": "1jL5AsBaetLK3IhOVinFyn_DHP8QXAADA121u-CWb6_I",
+    "spreadsheetIdOld": "0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE",
+    "worksheetId": "od6",
+    "worksheetName": "WorkingHours",
+    "oauth" : {
+        "email": "886016146227-8qqn1g29aeuhj592sstk0msh3jccvb9i@developer.gserviceaccount.com",
+        "keyFile": "/alasdoo-key-final.pem"
+    }
+}
