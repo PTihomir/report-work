@@ -107,11 +107,6 @@
     "whatwg-fetch": "^2.0.1"
   },
   "devDependencies": {
-    "grunt": "*",
-    "grunt-contrib-jshint": "*",
-    "grunt-contrib-nodeunit": "*",
-    "grunt-contrib-uglify": "*",
-    "should": "*"
   },
   "repository": {
     "type": "git",
