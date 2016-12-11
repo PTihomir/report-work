@@ -41,3 +41,8 @@ Run
 Run with next command:
 
 ./scripts/run-server.sh
+
+
+TODO
+replace console.log with debug
+use ES6 stuff in server
