@@ -1,0 +1,37 @@
+.report-list {
+
+}
+
+.report-list__line {
+    padding: 3px 5px;
+    display: flex;
+    flex-wrap: nowrap;
+
+    &--header {
+        color: #666;
+        font-size: 0.95em;
+        border-bottom: 1px solid #AAA;
+    }
+}
+
+.report-list__times {
+    flex: 0 0 auto;
+    margin-right: 15px;
+    width: 75px;
+
+    font-size: 0.9em;
+}
+
+.report-list__tasks {
+    flex: 1 1 auto;
+    display: flex;
+}
+
+.report-list__date,
+.report-list__hour {
+
+}
+
+.report-list__date {
+    font-weight: bold;
+}

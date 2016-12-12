@@ -1,9 +1,9 @@
 import React, { PropTypes, Component } from 'react';
+import Chip from 'material-ui/Chip';
 
 export default class ListEntries extends Component {
   static propTypes = {
     entries: PropTypes.array,
-    isLoading: PropTypes.bool,
   };
 
   static defaultProps = {
@@ -11,20 +11,32 @@ export default class ListEntries extends Component {
   };
 
   render() {
-    const { entries, isLoading } = this.props;
+    const { entries } = this.props;
 
     const lines = entries.map((entry) => (
-      <li key={entry.date}>
-        <span>{entry.date}</span>
-        <span>{entry.hour}</span>
-        <span>{entry.task.split(';').join(' - ')}</span>
-      </li>
+      <div block="report-list" elem="line" key={entry.date}>
+        <div block="report-list" elem="times">
+          <div block="report-list" elem="date">{entry.date}</div>
+          <div block="report-list" elem="hour">{entry.hour} h</div>
+        </div>
+        <div block="report-list" elem="tasks">
+          {entry.task.split(';').map((task, idx) => (
+            <Chip key={idx} style={{margin: 4}}>
+              {task}
+            </Chip>
+          ))}
+        </div>
+      </div>
     ));
 
     return (
-      <ul block="report-list">
-        {isLoading ? 'Loading...' : lines}
-      </ul>
+      <div block="report-list">
+        <div block="report-list" elem="line" mods={{header: true}}>
+          <div block="report-list" elem="times">Date and workhour</div>
+          <div block="report-list" elem="tasks">Tasks</div>
+        </div>
+        {lines}
+      </div>
     );
   }
 }
