@@ -1,0 +1,29 @@
+.root {
+    max-width: 1024px;
+    background-color: #FAFAFA;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.root__main {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.root__left-pane {
+    flex: 0 0 auto;
+    width: 50%;
+    padding: 0 15px;
+    border-right: 1px solid #AAA;
+}
+
+.root__right-pane {
+    flex: 0 0 auto;
+    width: 50%;
+    padding: 0 15px;
+}
+
+.root__stats {
+    border-top: 1px solid #AAA;
+    padding: 10px 15px;
+}
