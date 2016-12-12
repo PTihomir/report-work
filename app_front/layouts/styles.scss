@@ -10,20 +10,34 @@
     flex-wrap: nowrap;
 }
 
-.root__left-pane {
-    flex: 0 0 auto;
-    width: 50%;
-    padding: 0 15px;
-    border-right: 1px solid #AAA;
-}
-
+.root__left-pane,
 .root__right-pane {
     flex: 0 0 auto;
     width: 50%;
     padding: 0 15px;
+    box-sizing: border-box;
+}
+
+.root__left-pane {
+    border-right: 1px solid #AAA;
+}
+
+.root__right-pane {
 }
 
 .root__stats {
     border-top: 1px solid #AAA;
     padding: 10px 15px;
+}
+
+.root__server-stats--checking {
+    background-color: #ffffb2 !important;
+}
+
+.root__server-stats--down {
+    background-color: #ffb2b2 !important;
+}
+
+.root__server-stats--ok {
+    background-color: #b2ffc1 !important;
 }

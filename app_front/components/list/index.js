@@ -32,8 +32,7 @@ export default class ListEntries extends Component {
     return (
       <div block="report-list">
         <div block="report-list" elem="line" mods={{header: true}}>
-          <div block="report-list" elem="times">Date and workhour</div>
-          <div block="report-list" elem="tasks">Tasks</div>
+          <div>Previous reports</div>
         </div>
         {lines}
       </div>

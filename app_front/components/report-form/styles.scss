@@ -1,0 +1,25 @@
+
+.report-form__line {
+    padding: 3px 5px;
+
+    &--header {
+        height: 48px;
+        line-height: 48px;
+        display: flex;
+        color: #666;
+        font-size: 0.95em;
+        border-bottom: 1px solid #AAA;
+
+        & .report-form__title {
+            flex: 1 0 auto;
+        }
+
+        & button {
+            flex: 0 0 auto;
+        }
+    }
+
+    &--newItem {
+        text-align: right;
+    }
+}

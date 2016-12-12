@@ -1,8 +1,9 @@
 import React, { PureComponent, PropTypes } from 'react';
-import moment from 'moment';
-// import 'moment/locale/en-gb';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+
+import DatePicker from 'material-ui/DatePicker';
+import IconButton from 'material-ui/IconButton';
+import TextField from 'material-ui/TextField';
+import RemoveCircleIcon from 'material-ui/svg-icons/content/remove-circle';
 
 export default class ReportEntry extends PureComponent {
   static propTypes = {
@@ -23,7 +24,7 @@ export default class ReportEntry extends PureComponent {
     this.handleRemove = this.handleRemove.bind(this);
   }
 
-  handleChange(e) {
+  handleChange(e, value) {
     const newState = {
       id: this.props.id,
       date: this.props.date,
@@ -31,8 +32,8 @@ export default class ReportEntry extends PureComponent {
       task: this.props.task,
     };
 
-    if (moment.isMoment(e)) {
-      newState.date = e;
+    if (e === null && value) {
+      newState.date = value;
     } else if (e.target.name === 'hour') {
       newState.hour = parseInt(e.target.value);
     } else if (e.target.name === 'task') {
@@ -48,27 +49,33 @@ export default class ReportEntry extends PureComponent {
 
   render() {
     return (
-      <div block="report-form" elem="line">
+      <div block="report-form-line">
         <DatePicker
-          todayButton={'Today'}
-          selected={this.props.date}
+          style={{marginRight: 10}}
+          textFieldStyle={{width: 100}}
+          name="date"
+          autoOk={true}
+          value={this.props.date}
           onChange={this.handleChange}
-          weekStart="1"
+          firstDayOfWeek={1}
           />
-        <input type="number"
+        <TextField type="number"
+          style={{width: 50, marginRight: 10}}
           name="hour"
           min="0" max="18" size="2"
           placeholder="8"
           value={this.props.hour}
           onChange={this.handleChange}
           />
-        <input type="text"
+        <TextField type="text"
           name="task"
           placeholder="Define tasks"
-          /*value={this.props.task}*/
+          /* value={this.props.task} */
           onChange={this.handleChange}
           />
-        <button type="button" onClick={this.handleRemove}>Remove</button>
+        <IconButton onClick={this.handleRemove}>
+          <RemoveCircleIcon style={{color: '#CC8888'}} />
+        </IconButton>
       </div>
     );
   }

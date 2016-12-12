@@ -5,6 +5,10 @@ import moment from 'moment';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 
+import FlatButton from 'material-ui/FlatButton';
+import OpenIcon from 'material-ui/svg-icons/action/open-in-new';
+import Paper from 'material-ui/Paper';
+
 // Needed for onTouchTap
 // http://stackoverflow.com/a/34015469/988941
 injectTapEventPlugin();
@@ -50,7 +54,7 @@ export default class Root extends Component {
               { lastDate &&
                 (
                   <ReportForm
-                    lastDate={moment(lastDate, 'MM/DD/YYYY')}
+                    lastDate={moment(lastDate, 'MM/DD/YYYY').toDate()}
                     defaultMailto={defaultMailto}
                     onSend={onSendEntries}
                     />
@@ -59,13 +63,22 @@ export default class Root extends Component {
             </div>
           </div>
           <div className="root__stats">
-            <p>
-              <span>Server status: {serverStatus}</span>
-              <span>Server message: {serverMessage}</span>
-            </p>
-            <p>
-              { documentUrl && (<a target="_blank" href={documentUrl}>Go to Google Drive document...</a>) }
-            </p>
+            { documentUrl && (
+              <FlatButton
+                href={documentUrl}
+                target="_blank"
+                label="Open spreadsheet"
+                secondary={true}
+                icon={<OpenIcon />}
+                />
+              )}
+            <Paper zDepth={2}
+              style={{
+                padding: 10,
+                textAlign: 'center',
+                display: 'inline-block',
+              }}
+              className={`root__server-stats root__server-stats--${serverStatus}`}>Server: {serverMessage}</Paper>
           </div>
         </div>
       </MuiThemeProvider>

@@ -1,6 +1,12 @@
 import React, { PropTypes, Component } from 'react';
 import moment from 'moment';
 
+import IconButton from 'material-ui/IconButton';
+import TextField from 'material-ui/TextField';
+import SendIcon from 'material-ui/svg-icons/content/send';
+import FloatingActionButton from 'material-ui/FloatingActionButton';
+import ContentAddIcon from 'material-ui/svg-icons/content/add';
+
 import ReportEntry from '#report-form-line';
 
 export default class ListEntries extends Component {
@@ -70,7 +76,7 @@ export default class ListEntries extends Component {
 
     const lastDate = entries.length && entries[entries.length - 1].date;
 
-    const nextDate = lastDate ? moment(lastDate).add(1, 'd') : moment(this.props.lastDate);
+    const nextDate = lastDate ? moment(lastDate).add(1, 'd').toDate() : this.props.lastDate;
 
     const newEntry = {
       id: newIndex,
@@ -99,7 +105,7 @@ export default class ListEntries extends Component {
     const entries = {};
 
     this.state.entries.map((e) => ({
-      date: e.date.format('MM/DD/YYYY'),
+      date: moment(e.date).format('MM/DD/YYYY'),
       hour: e.hour,
       task: e.task.split(';'),
     })).forEach((e) => {
@@ -109,7 +115,7 @@ export default class ListEntries extends Component {
     const preparedEntries = Object.keys(entries).map((key) => entries[key]);
 
     this.props.onSend({
-      mailTo: this.email.value,
+      mailTo: this.email.getValue(),
       entries: preparedEntries,
     });
   }
@@ -123,24 +129,29 @@ export default class ListEntries extends Component {
 
     return (
       <form block="report-form">
-        <div>
-          <h3>New entries</h3>
-          <button
-            type="button"
+        <div block="report-form" elem="line" mods={{header: true}}>
+          <span block="report-form" elem="title">New entries</span>
+          <IconButton
+            onClick={this.handleSending}
             disabled={this.state.entries.map(this.validateEntry).some((e) => e.error)}
-            onClick={this.handleSending}>
-            Send
-          </button>
+            tooltip="Send" >
+            <SendIcon />
+          </IconButton>
         </div>
-        <div>
-          <input type="email" defaultValue={defaultMailto} ref={this.refEmailInput} placeholder="mail:to" />
+        <div block="report-form" elem="line" mods={{email: true}}>
+          <TextField name="email" type="email" defaultValue={defaultMailto} ref={this.refEmailInput} placeholder="mail:to" />
         </div>
         {this.state.entries.map((e) => (
-          <ReportEntry {...e} key={e.id} />
+          <ReportEntry {...e}
+            mix={{block: 'report-form', elem: 'line'}}
+            key={e.id}
+            />
         ))}
-        <button type="button" onClick={this.handleNewEntry}>
-          New entry
-        </button>
+        <div block="report-form" elem="line" mods={{newItem: true}}>
+          <FloatingActionButton onClick={this.handleNewEntry}>
+            <ContentAddIcon />
+          </FloatingActionButton>
+        </div>
       </form>
     );
   }

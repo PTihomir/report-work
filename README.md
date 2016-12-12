@@ -44,5 +44,7 @@ Run with next command:
 
 
 TODO
-replace console.log with debug
 use ES6 stuff in server
+send ok messages from server to frontend
+use websockets for communication
+send mails with delay, so they appear in order in sent mail

@@ -9,8 +9,8 @@
         "pass": "rkwstsilfkzylrkr"
     },
     "defaultFrom": "tihomir@alasdoo.com",
-    "defaultTo": "ptihomir@gmail.com",
-    "defaultToBak": "report@wedoqa.com",
+    "defaultToBak": "ptihomir@gmail.com",
+    "defaultTo": "report@wedoqa.com",
     "templates": {
         "title": "DailyReport for {{&date}} {{&hour}}h",
         "body": "Hello,<br/><ul>{{#task}}<li>{{.}}</li>{{/task}}</ul><br/>Regards,<br/>Tihomir Popov"

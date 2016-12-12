@@ -93,7 +93,6 @@
     "nodemon": "^1.11.0",
     "postcss-loader": "^1.2.0",
     "react": "15.4.1",
-    "react-datepicker": "^0.37.0",
     "react-dom": "15.4.1",
     "react-tap-event-plugin": "^2.0.1",
     "react-transform-hmr": "^1.0.4",
