@@ -17,7 +17,8 @@ export default {
   // target: 'web', // default
   entry: {
     // Entry point.
-    app: [paths.base(config.dir_client) + '/main.js'],
+    app: [`${paths.base(config.dir_client)}/main.js`],
+    css: [`${paths.base(config.dir_client)}/css/base.scss`],
     // Get list of vendor files from config.
     vendor: config.compiler_vendor,
   },
@@ -39,7 +40,9 @@ export default {
       }, {
         test: /\.(png|jpg)$/,
         loader: 'url?limit=8192',
-      },
+      }, {
+        test: /\.(ttf|eot|otf)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        loaders: [ 'file?name=[name].[ext]' ] },
       {
         test: /\.js$/,
         loader: 'rebem-layers',
