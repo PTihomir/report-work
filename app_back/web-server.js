@@ -4,14 +4,10 @@ const util = require('util');
 const http = require('http');
 const fs = require('fs');
 const url = require('url');
+
 const ReportServlet = require('./report_servlet.js');
 
-const debug = util.debuglog('web-server');
-
-var DEFAULT_PORT = 3111;
-
-var defaultPage = 'app_back/index.html';
-
+// Some static helper functions.
 function escapeHtml(value) {
   return value.toString()
     .replace('<', '&lt;')
@@ -19,8 +15,8 @@ function escapeHtml(value) {
     .replace('"', '&quot;');
 }
 
-function createServlet(Class) {
-  var servlet = new Class();
+function createServlet(Class, args) {
+  var servlet = new Class(...args);
 
   return servlet.handleRequest.bind(servlet);
 }
@@ -31,8 +27,9 @@ function createServlet(Class) {
  *
  * @param {Object} Map of method => Handler function
  */
-function HttpServer(handlers) {
+function HttpServer(debug, handlers) {
   this.handlers = handlers;
+  this.debug = debug;
   this.server = http.createServer(this.handleRequest_.bind(this));
 }
 
@@ -43,7 +40,7 @@ HttpServer.prototype.getServer = function () {
 HttpServer.prototype.start = function (port) {
   this.port = port;
   this.server.listen(port);
-  debug('Http Server running at http://localhost:' + port + '/');
+  this.debug('Http Server running at http://localhost:' + port + '/');
   return this;
 };
 
@@ -55,10 +52,10 @@ HttpServer.prototype.parseUrl_ = function (urlString) {
 
 HttpServer.prototype.handleRequest_ = function (req, res) {
   var logEntry = req.method + ' ' + req.url;
-  if (req.headers['user-agent']) {
-    logEntry += ' ' + req.headers['user-agent'];
-  }
-  debug(logEntry);
+  // if (req.headers['user-agent']) {
+  //   logEntry += ' ' + req.headers['user-agent'];
+  // }
+  this.debug(logEntry);
   req.url = this.parseUrl_(req.url);
 
   var handler = this.handlers[req.method];
@@ -70,12 +67,18 @@ HttpServer.prototype.handleRequest_ = function (req, res) {
   }
 };
 
-function OptionServlet() {}
+/**
+ * Servlet created purely to set CORS header values.
+ */
+function OptionServlet(debug, corsHeaders) {
+  this.debug = debug;
+  this.corsHeaders = corsHeaders;
+}
 
 OptionServlet.prototype.handleRequest = function (req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
-  res.setHeader('Access-Control-Allow-Methods', 'POST');
+  this.corsHeaders.forEach(({header, value}) => {
+    res.setHeader(header, value);
+  });
 
   res.end();
 };
@@ -83,7 +86,10 @@ OptionServlet.prototype.handleRequest = function (req, res) {
 /**
  * Handles static content.
  */
-function StaticServlet() {}
+function StaticServlet(debug, defaultPage) {
+  this.debug = debug;
+  this.defaultPage = defaultPage;
+}
 
 StaticServlet.MimeMap = {
   txt: 'text/plain',
@@ -109,7 +115,7 @@ StaticServlet.prototype.handleRequest = function (req, res) {
     return this.sendForbidden_(req, res, path);
   }
   if (parts.length === 2 && parts[1] === '') {
-    parts[1] = defaultPage;
+    parts[1] = this.defaultPage;
     return this.sendRedirect_(req, res, parts.join('/'));
   }
 
@@ -128,8 +134,8 @@ StaticServlet.prototype.sendError_ = function (req, res, error) {
   res.write('<title>Internal Server Error</title>\n');
   res.write('<h1>Internal Server Error</h1>');
   res.write('<pre>' + escapeHtml(error) + '</pre>');
-  debug('500 Internal Server Error');
-  debug(util.inspect(error));
+  this.debug('500 Internal Server Error');
+  this.debug(util.inspect(error));
 };
 
 StaticServlet.prototype.sendMissing_ = function (req, res, path) {
@@ -142,7 +148,7 @@ StaticServlet.prototype.sendMissing_ = function (req, res, path) {
   res.write('<h1>Not Found</h1>');
   res.write(`<p>The requested URL ${escapeHtml(subpath)} was not found on this server.</p>`);
   res.end();
-  debug(`404 Not Found: ${subpath}`);
+  this.debug(`404 Not Found: ${subpath}`);
 };
 
 StaticServlet.prototype.sendForbidden_ = function (req, res, path) {
@@ -158,7 +164,7 @@ StaticServlet.prototype.sendForbidden_ = function (req, res, path) {
     escapeHtml(subpath) + ' on this server.</p>'
     );
   res.end();
-  debug(`403 Forbidden: ${subpath}`);
+  this.debug(`403 Forbidden: ${subpath}`);
 };
 
 StaticServlet.prototype.sendRedirect_ = function (req, res, redirectUrl) {
@@ -175,7 +181,7 @@ StaticServlet.prototype.sendRedirect_ = function (req, res, redirectUrl) {
     '">here</a>.</p>'
     );
   res.end();
-  debug(`301 Moved Permanently: ${redirectUrl}`);
+  this.debug(`301 Moved Permanently: ${redirectUrl}`);
 };
 
 StaticServlet.prototype.sendFile_ = function (req, res, path) {
@@ -250,13 +256,13 @@ StaticServlet.prototype.writeDirectoryIndex_ = function (req, res, path, files) 
 };
 
 // Must be last,
-function main(argv) {
-  new HttpServer({
-    GET: createServlet(StaticServlet),
-    HEAD: createServlet(StaticServlet),
-    POST: createServlet(ReportServlet),
-    OPTIONS: createServlet(OptionServlet),
-  }).start(Number(argv[2]) || DEFAULT_PORT);
-}
+exports.startServer = function startServer(config) {
+  const debug = util.debuglog(config.debug.debug_name);
 
-main(process.argv);
+  new HttpServer(debug, {
+    GET: createServlet(StaticServlet, [debug, config.defaul_page]),
+    HEAD: createServlet(StaticServlet, [debug, config.defaul_page]),
+    POST: createServlet(ReportServlet, [config]),
+    OPTIONS: createServlet(OptionServlet, [debug, config.cors_headers]),
+  }).start(config.server_port);
+};

@@ -13,21 +13,22 @@ export default class ListEntries extends Component {
   render() {
     const { entries } = this.props;
 
-    const lines = entries.map((entry) => (
-      <div block="report-list" elem="line" key={entry.date}>
-        <div block="report-list" elem="times">
-          <div block="report-list" elem="date">{entry.date}</div>
-          <div block="report-list" elem="hour">{entry.hour} h</div>
+    const lines = entries.filter((entry) => typeof entry.task === 'string')
+      .map((entry) => (
+        <div block="report-list" elem="line" key={entry.date}>
+          <div block="report-list" elem="times">
+            <div block="report-list" elem="date">{entry.date}</div>
+            <div block="report-list" elem="hour">{entry.hour} h</div>
+          </div>
+          <div block="report-list" elem="tasks">
+            {entry.task.split(';').map((task, idx) => (
+              <Chip key={idx} style={{margin: 4}}>
+                {task}
+              </Chip>
+            ))}
+          </div>
         </div>
-        <div block="report-list" elem="tasks">
-          {entry.task.split(';').map((task, idx) => (
-            <Chip key={idx} style={{margin: 4}}>
-              {task}
-            </Chip>
-          ))}
-        </div>
-      </div>
-    ));
+      ));
 
     return (
       <div block="report-list">

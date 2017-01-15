@@ -5,6 +5,8 @@
   "main": "bin/web-server.js",
   "scripts": {
     "clean": "rimraf dist",
+    "server:production": "better-npm-run server:production",
+    "server:dev": "better-npm-run server:dev",
     "build": "better-npm-run build",
     "lint": "eslint ./src/",
     "start": "better-npm-run start",
@@ -12,6 +14,24 @@
     "deploy": "better-npm-run deploy"
   },
   "betterScripts": {
+    "server:production": {
+      "command": "node ./app_back/main.js",
+      "env": {
+        "NODE_ENV": "production",
+        "NODE_DEBUG": "report-servlet",
+        "PORT": "3111",
+        "CONFIG_PATH": "./_production.json"
+      }
+    },
+    "server:dev": {
+      "command": "node ./app_back/main.js",
+      "env": {
+        "NODE_ENV": "development",
+        "NODE_DEBUG": "main,web-server,report-servlet",
+        "PORT": "3111",
+        "CONFIG_PATH": "./_development.json"
+      }
+    },
     "build": {
       "command": "babel-node bin/build",
       "env": {
@@ -64,7 +84,7 @@
     "css-loader": "^0.26.1",
     "cssnano": "^3.8.1",
     "debug": "^2.3.3",
-    "edit-google-spreadsheet": "^0.2.7",
+    "edit-google-spreadsheet": "^0.2.21",
     "eslint": "^3.11.1",
     "eslint-config-standard": "^6.2.1",
     "eslint-config-standard-react": "^4.2.0",

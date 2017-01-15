@@ -1,16 +1,16 @@
 {
     "service": "gmail",
     "auth": {
-        "user": "tihomir@alasdoo.com",
-        "pass": "wqmesvhnotadjhao"
+        "user": "ptihomir@gmail.com",
+        "pass": "rkwstsilfkzylrkr"
     },
     "defaultFrom": "tihomir@alasdoo.com",
-    "defaultTo": "report@wedoqa.com",
+    "defaultTo": "ptihomir@gmail.com",
     "templates": {
-        "title": "DailyReport for {{&date}} {{&hour}}h",
+        "title": "TEST: DailyReport for {{&date}} {{&hour}}h",
         "body": "Hello,<br/><ul>{{#task}}<li>{{.}}</li>{{/task}}</ul><br/>Regards,<br/>Tihomir Popov"
     },
-    "spreadsheetId": "1jL5AsBaetLK3IhOVinFyn_DHP8QXAADA121u-CWb6_I",
+    "spreadsheetId": "1V2leRjByZS_0t1jlBzsKvTYR8YI0kYkt6QQK2uKg2zU",
     "worksheetId": "od6",
     "worksheetName": "WorkingHours",
     "oauth" : {
