@@ -19,7 +19,12 @@
         }
     }
 
-    &--newItem {
-        text-align: right;
+    &--email {
+        display: flex;
+        justify-content: space-between;
+
+        .new-button {
+            flex: 0 0 auto;
+        }
     }
 }

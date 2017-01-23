@@ -20,12 +20,12 @@ import './styles.scss';
 
 export default class Root extends Component {
   static propTypes = {
-    defaultMailto: PropTypes.string.isRequired,
+    defaultMailto: PropTypes.string,
     documentUrl: PropTypes.string,
     entries: PropTypes.array,
-    lastDate: PropTypes.string.isRequired,
+    lastDate: PropTypes.string,
+    messages: PropTypes.array,
     onSendEntries: PropTypes.func,
-    serverMessage: PropTypes.string,
     serverStatus: PropTypes.string,
   }
 
@@ -34,7 +34,7 @@ export default class Root extends Component {
   // }
 
   render() {
-    const { documentUrl, defaultMailto, lastDate, entries, serverStatus, serverMessage, onSendEntries } = this.props;
+    const { documentUrl, defaultMailto, lastDate, entries, serverStatus, messages, onSendEntries } = this.props;
 
     return (
       <MuiThemeProvider>
@@ -51,14 +51,16 @@ export default class Root extends Component {
               }
             </div>
             <div className="root__right-pane">
-              { lastDate &&
-                (
+              {
+                lastDate && defaultMailto
+                ? (
                   <ReportForm
-                    lastDate={moment(lastDate, 'MM/DD/YYYY').toDate()}
+                    lastDate={moment(lastDate, 'MM/DD/YYYY').add(1, 'day').toDate()}
                     defaultMailto={defaultMailto}
                     onSend={onSendEntries}
                     />
                 )
+                : null
               }
             </div>
           </div>
@@ -78,7 +80,17 @@ export default class Root extends Component {
                 textAlign: 'center',
                 display: 'inline-block',
               }}
-              className={`root__server-stats root__server-stats--${serverStatus}`}>Server: {serverMessage}</Paper>
+              className={`root__server-stats root__server-stats--${serverStatus}`} >
+              <ul style={{ padding: 0 }}>
+                {
+                  messages && messages.map(({message, tstamp}, idx) => (
+                    <li key={idx} style={{ display: 'block', textAlign: 'left' }}>
+                      {moment(tstamp).format('LTS')}: {message}
+                    </li>
+                  ))
+                }
+              </ul>
+            </Paper>
           </div>
         </div>
       </MuiThemeProvider>

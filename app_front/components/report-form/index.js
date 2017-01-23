@@ -140,18 +140,18 @@ export default class ListEntries extends Component {
         </div>
         <div block="report-form" elem="line" mods={{email: true}}>
           <TextField name="email" type="email" defaultValue={defaultMailto} ref={this.refEmailInput} placeholder="mail:to" />
+          <FloatingActionButton className="new-button" onClick={this.handleNewEntry}>
+            <ContentAddIcon />
+          </FloatingActionButton>
         </div>
-        {this.state.entries.map((e) => (
+
+        {this.state.entries.filter((e) => e.date).map((e) => (
           <ReportEntry {...e}
             mix={{block: 'report-form', elem: 'line'}}
             key={e.id}
             />
         ))}
-        <div block="report-form" elem="line" mods={{newItem: true}}>
-          <FloatingActionButton onClick={this.handleNewEntry}>
-            <ContentAddIcon />
-          </FloatingActionButton>
-        </div>
+
       </form>
     );
   }

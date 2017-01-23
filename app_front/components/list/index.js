@@ -22,7 +22,7 @@ export default class ListEntries extends Component {
           </div>
           <div block="report-list" elem="tasks">
             {entry.task.split(';').map((task, idx) => (
-              <Chip key={idx} style={{margin: 4}}>
+              <Chip key={idx} className="report-list__task" style={{margin: 2}}>
                 {task}
               </Chip>
             ))}

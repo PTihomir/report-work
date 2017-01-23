@@ -14,8 +14,9 @@ const chalkOk = chalk.green;
 const chalkError = chalk.red;
 const chalkDebug = chalk.black.bgYellow;
 
-var Spreadsheet = require('edit-google-spreadsheet');
+const Spreadsheet = require('edit-google-spreadsheet');
 
+// The constructor function.
 function ReportServlet(config) {
   this.config = config;
   this.debug = util.debuglog(this.config.report_config.debug.debug_name);
@@ -33,19 +34,36 @@ function ReportServlet(config) {
   }, {
     regexp: /app\/status/i,
     handler: this.sendStatus,
-  }, {
-    regexp: /app\/init/i,
-    handler: this.sendInit,
   }];
 
-  this.docsData = {
-    info: null,
-    rows: null,
-    stale: true,
+  this.state = {
+    settings: {
+      defaultMailto: config.report_config.defaultTo,
+      lastDate: false,
+      documentUrl: `https://docs.google.com/a/alasdoo.com/spreadsheets/d/${config.report_config.spreadsheetId}`,
+    },
+    history: undefined,
+    messages: [],
+    hash: {
+      settings: `${Date.now()}`,
+      history: 0,
+      messages: 0,
+    },
   };
 
+  this.saveMessage('Server started');
   this.fetchDataFromDocs();
-}
+};
+
+ReportServlet.prototype.saveMessage = function (message) {
+  this.state.messages.push({
+    tstamp: Date.now(),
+    message,
+  });
+
+  // Update hash.
+  this.state.hash.messages = `${Date.now()}`;
+};
 
 ReportServlet.prototype.handleRequest = function (req, res) {
   this.config.cors_headers.forEach(({header, value}) => {
@@ -62,6 +80,7 @@ ReportServlet.prototype.handleRequest = function (req, res) {
     }
   }
 
+  this.debug(chalkDebug(`Path ${req.url.pathname} not matched with any endpoint.`));
   res.end();
 };
 
@@ -69,20 +88,33 @@ ReportServlet.prototype.sendStatus = function (req, res) {
   var urlParts = url.parse(req.url, true);
   var query = urlParts.query;
 
-  var response = {
-    status: true,
-  };
+  const response = {};
 
-  if (this.docsData && (!this.docsData.stale || query.force === 'yes')) {
-    response.rows = [];
-    for (var i = this.docsData.info.lastRow; i > 0 && i > this.docsData.info.lastRow - 10; i--) {
-      response.rows.push({
-        date: this.docsData.rows[i][1],
-        hour: this.docsData.rows[i][3],
-        task: this.docsData.rows[i][2],
-      });
+  const { settings, history, messages } = query;
+
+  if (settings !== this.state.hash.settings) {
+    response.settings = this.state.settings;
+    response.settingsHash = this.state.hash.settings;
+  }
+
+  if (history !== this.state.hash.history) {
+    if (this.state.history) {
+      const { rows } = this.state.history;
+      response.historyHash = this.state.hash.history;
+
+      response.history = rows.slice(-10)
+        .reverse()
+        .map((row) => ({
+          date: row[1],
+          hour: row[3],
+          task: row[2],
+        }));
     }
-    this.docsData.stale = true;
+  }
+
+  if (messages !== this.state.hash.messages) {
+    response.messages = this.state.messages.slice(-5);
+    response.messagesHash = this.state.hash.messages;
   }
 
   res.write(JSON.stringify(response));
@@ -90,17 +122,15 @@ ReportServlet.prototype.sendStatus = function (req, res) {
 };
 
 ReportServlet.prototype.sendReport = function (req, res) {
-  var that = this,
-    body = [];
+  const body = [];
 
-  req.on('data', function (data) {
+  req.on('data', (data) => {
     body.push(data);
-
-          // Too much POST data, kill the connection!
+    // Too much POST data, kill the connection!
     if (body.length > 1000) req.connection.destroy();
   })
-  .on('end', function () {
-    var post = JSON.parse(body.join(''));
+  .on('end', () => {
+    const post = JSON.parse(body.join(''));
 
     if (this.DEBUG_MODE) {
       this.debug(chalkDebug('Got data in DEBUG mode.'));
@@ -108,98 +138,92 @@ ReportServlet.prototype.sendReport = function (req, res) {
       return;
     }
 
-    that.sendDataToDocs(post, function (err) {
+    this.sendDataToDocs(post, (err, okRows) => {
       if (err) {
+        this.saveMessage('Sending data to DOCS failed.');
         res.write(JSON.stringify({
           status: false,
         }));
         res.end();
         return;
       }
+      this.saveMessage('Sending data to DOCS succeded.');
 
-      that.sendMail(post, function (success) {
+      this.fetchDataFromDocs();
+
+      this.sendMail(Object.assign({}, post, {entries: okRows}), (success) => {
+        this.saveMessage('Sending mails succeded.');
         res.write(JSON.stringify({
           status: success,
         }));
         res.end();
-        that.fetchDataFromDocs();
       });
     });
   });
 };
 
-ReportServlet.prototype.sendInit = function (req, res) {
-  const config = this.config.report_config;
-
-  var response = {
-    defaultMailto: config.defaultTo,
-  };
-
-  response.lastDate = this.docsData.rows[this.docsData.info.lastRow][1];
-  // response.documentUrl = 'https://docs.google.com/a/alasdoo.com/spreadsheet/ccc?key=0AqXPiPwnV1Y2dFp3RmM1bTdLZTVlcVdvb3pZVEY5cFE&usp=sharing#gid=0';
-  response.documentUrl = `https://docs.google.com/a/alasdoo.com/spreadsheets/d/${config.spreadsheetId}`;
-
-  res.write(JSON.stringify(response));
-  res.end();
-};
-
 ReportServlet.prototype.sendMail = function (data, done) {
   const config = this.config.report_config;
     // create reusable transport method (opens pool of SMTP connections)
-  var smtpTransport = nodemailer.createTransport({
-      service: config.service,
-      auth: {
-        user: config.auth.user,
-        pass: config.auth.pass,
-      },
-    }),
-    // send mail with defined transport object
-    message,
-    counter = 0,
-    subject,
-    messagebody,
-    success = true;
+  const smtpTransport = nodemailer.createTransport({
+    service: config.service,
+    auth: {
+      user: config.auth.user,
+      pass: config.auth.pass,
+    },
+  });
 
-  for (var i = 0; i < data.entries.length; i++) {
-    subject = mu.render(config.templates.title, data.entries[i]);
-    messagebody = mu.render(config.templates.body, data.entries[i]);
+  const messages = data.entries.map((entry, idx) => {
+    const subject = mu.render(config.templates.title, entry);
+    const messagebody = mu.render(config.templates.body, entry);
 
-    message = {
+    return {
       from: config.defaultFrom,
       to: (data.mailto || config.defaultTo),
       subject: subject,
       html: messagebody,
     };
+  });
 
-    smtpTransport.sendMail(message, function (error, response) {
-      counter += 1;
+  let counter = 0;
+  let success = true;
+  const send = (messages, done) => {
+    const messageIndex = counter++;
+    const message = messages[messageIndex];
 
-      if (error) {
+    smtpTransport.sendMail(message, (err, response) => {
+      if (err) {
         success = false;
-        this.debug(chalkError(error));
+        this.saveMessage(`Error when sending message with title ${message.subject}`);
+        this.debug(chalkError(err));
       } else {
         this.debug(chalkInfo(`Message sent: ${response.message}`));
       }
 
-      if (counter === data.entries.length) {
-        smtpTransport.close(); // shut down the connection pool, no more messages
-        if (success) {
-          this.debug(chalkOk('All messages sent.'));
-        } else {
-          this.debug(chalkError('All messages sent, but with error.'));
-        }
-        if (done) {
-          done(success);
-        }
+      if (messageIndex + 1 === messages.length) {
+        done(success);
+      } else {
+        send(messages, done);
       }
     });
-  }
+  };
+
+  send(messages, () => {
+    if (success) {
+      this.saveMessage(`${counter} message successfully sent.`);
+      this.debug(chalkOk('All messages sent.'));
+    } else {
+      this.saveMessage(`${counter} message sent, but some with error.`);
+      this.debug(chalkError('All messages sent, but with error.'));
+    }
+
+    smtpTransport.close();
+    if (done) done(success);
+  });
 };
 
 ReportServlet.prototype.fetchDataFromDocs = function (done) {
   const config = this.config.report_config;
-
-  var _this = this;
   // create reusable transport method (opens pool of SMTP connections)
   Spreadsheet.load({
     debug: true,
@@ -211,19 +235,34 @@ ReportServlet.prototype.fetchDataFromDocs = function (done) {
       email: config.oauth.email,
       keyFile: `${__dirname}${config.oauth.keyFile}`,
     },
-  }, function sheetReady(err, spreadsheet) {
+  }, (err, spreadsheet) => {
     if (err) {
+      this.saveMessage('Spreadsheet load failed.');
       throw err;
     }
 
     spreadsheet.receive((err, rows, info) => {
       if (err) {
+        this.saveMessage('Spreadsheet receive failed.');
         throw err;
       }
 
-      _this.docsData.rows = rows;
-      _this.docsData.info = info;
-      _this.docsData.stale = false;
+      this.saveMessage('Spreadsheet fetched.');
+
+      const processRows = Object.keys(rows)
+        .map((key) => Object.assign({key: key}, rows[key]))
+        .filter((row) => typeof row[3] === 'number');
+
+      this.state.history = {
+        rows: processRows,
+        info: info,
+      };
+
+      this.state.settings.lastDate = processRows[processRows.length - 1][1];
+
+      // Update hash.
+      this.state.hash.history = `${Date.now()}`;
+      this.state.hash.settings = `${Date.now()}`;
 
       if (done) {
         done();
@@ -234,8 +273,6 @@ ReportServlet.prototype.fetchDataFromDocs = function (done) {
 
 ReportServlet.prototype.sendDataToDocs = function (data, done) {
   const config = this.config.report_config;
-
-  var _this = this;
 
   // create reusable transport method (opens pool of SMTP connections)
   Spreadsheet.load({
@@ -248,51 +285,51 @@ ReportServlet.prototype.sendDataToDocs = function (data, done) {
       keyFile: `${__dirname}${config.oauth.keyFile}`,
     },
 
-  }, function sheetReady(err, spreadsheet) {
+  }, (err, spreadsheet) => {
     if (err) {
       throw err;
     }
 
-    var sendData = {},
-      entry,
-      nextRow = _this.docsData.info.nextRow,
-      processed,
-      // dateTokens,
-      formatedDate;
+    const errorRows = [];
+    const updateRows = [];
+    const newRows = [];
+    const sendData = {};
 
-    for (var i = 0; i < data.entries.length; i++) {
-      entry = data.entries[i];
-      processed = false;
+    // Group entries by error, update or new.
+    data.entries
+      .forEach((entry) => {
+        const oldRow = this.state.history.rows
+          .find((row) => new Date(row[1]).getTime() === new Date(entry.date).getTime());
 
-      // dateTokens = entry.date.split('/');
-      // formatedDate = [dateTokens[0], dateTokens[1], dateTokens[2]].join('/');
-      formatedDate = entry.date;
-
-      for (var j = _this.docsData.info.lastRow; j > Math.max(0, _this.docsData.info.lastRow - 31); j--) {
-        if (typeof _this.docsData.rows[j] === 'undefined') {
-          continue;
-        }
-
-        if (new Date(_this.docsData.rows[j]['1']).getTime() === new Date(formatedDate).getTime()) {
-          sendData[j] = {
-            2: entry.task.join(';'),
-          };
-
-          if (!_this.docsData.rows[j]['3']) {
-            sendData[j]['3'] = entry.hour;
-          } else if (_this.docsData.rows[j]['3'] !== entry.hour) {
-            this.debug(chalkError(`For ${formatedDate} the old and the new hour is different.`), _this.docsData.rows[j][3], '->', entry.hour);
+        if (oldRow) { // Entry with the same date exist, it should update it.
+          if (oldRow[3] !== entry.hour) { // If hours are different, then send a notification.
+            errorRows.push(entry);
+            this.debug(chalkError(`For ${entry.date} the old and the new hour is different.`), oldRow[3], '->', entry.hour);
+            this.saveMessage(`For ${entry.date} hours are different. ${oldRow[3]} -> ${entry.hour}`);
+          } else {
+            updateRows.push(Object.assign({key: oldRow.key}, entry));
           }
-
-          processed = true;
-          break;
+        } else {      // New row is defined
+          newRows.push(entry);
         }
-      }
+      });
 
-      if (!processed) {
-        sendData[nextRow++] = [[formatedDate, entry.task.join(';'), entry.hour]];
-      }
-    }
+    this.debug(chalkInfo(`Error ${errorRows.length}; Update ${updateRows.length}; New ${newRows.length}`));
+
+    updateRows.forEach(({hour, date, task, key}) => {
+      sendData[key] = {
+        3: hour,
+        2: task.join(';'),
+      };
+    });
+
+    newRows.forEach(({hour, date, task}, idx) => {
+      sendData[this.state.history.info.nextRow + idx] = [[
+        date,
+        task.join(';'),
+        hour,
+      ]];
+    });
 
     spreadsheet.add(sendData);
 
@@ -300,12 +337,12 @@ ReportServlet.prototype.sendDataToDocs = function (data, done) {
     this.debug(util.inspect(sendData, {color: true}));
 
     spreadsheet.send((err) => {
-      if (err) throw err;
-      this.debug(chalkOk('Updated Success!'));
-
-      if (done) {
-        done();
+      if (err) {
+        done(err);
       }
+
+      this.debug(chalkOk('Updated Success!'));
+      done(null, [].concat(updateRows, newRows));
     });
   });
 };
