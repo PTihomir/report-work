@@ -35,7 +35,7 @@ debug(`Read config file: ${file}`);
 fs.readFile(file, 'utf8', function (err, data) {
   if (err) {
     debug(`Error: ${err}`);
-    debug('Create symlink in ./app_back to ./config_back/<custom_config>.json');
+    debug('Create symlink in ./app_back to ./config/<custom_config>.json');
     process.exit(1);
     return;
   }
@@ -45,7 +45,7 @@ fs.readFile(file, 'utf8', function (err, data) {
   config.report_config = Object.assign({}, config.report_config, configData);
 
   // Start server.
-  debug('Starting web-server.');
+  debug('Starting backend server.');
   require('./web-server').startServer(config);
 });
 

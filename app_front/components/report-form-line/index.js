@@ -1,3 +1,4 @@
+import './styles.scss';
 import React, { PureComponent, PropTypes } from 'react';
 
 import DatePicker from 'material-ui/DatePicker';

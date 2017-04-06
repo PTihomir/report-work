@@ -1,4 +1,0 @@
-{
-  "verbose": false,
-  "ignore": ["dist", "coverage", "tests", "app_front", "app_back", "node_modules"]
-}

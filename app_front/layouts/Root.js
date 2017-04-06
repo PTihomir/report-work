@@ -1,3 +1,4 @@
+import './styles.scss';
 import React, { Component, PropTypes } from 'react';
 import 'whatwg-fetch';
 import moment from 'moment';
@@ -13,10 +14,8 @@ import Paper from 'material-ui/Paper';
 // http://stackoverflow.com/a/34015469/988941
 injectTapEventPlugin();
 
-import List from '#list';
-import ReportForm from '#report-form';
-
-import './styles.scss';
+import List from '../components/list';
+import ReportForm from '../components/report-form';
 
 export default class Root extends Component {
   static propTypes = {

@@ -1,3 +1,4 @@
+import './styles.scss';
 import React, { PropTypes, Component } from 'react';
 import moment from 'moment';
 
@@ -7,7 +8,7 @@ import SendIcon from 'material-ui/svg-icons/content/send';
 import FloatingActionButton from 'material-ui/FloatingActionButton';
 import ContentAddIcon from 'material-ui/svg-icons/content/add';
 
-import ReportEntry from '#report-form-line';
+import ReportEntry from '../report-form-line';
 
 export default class ListEntries extends Component {
   static propTypes = {

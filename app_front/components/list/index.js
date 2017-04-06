@@ -1,3 +1,4 @@
+import './styles.scss';
 import React, { PropTypes, Component } from 'react';
 import Chip from 'material-ui/Chip';
 
