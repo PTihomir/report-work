@@ -1,15 +1,48 @@
+==============
 report.alasdoo
-============
+==============
 
 My javascript/nodejs web application project for generating and sending reports of my work.
 
+==================
+Available commands
+==================
 
-Setup for email
-============
+To start the backend, use commands:
 
-Make a copy of ./config/userconfig_example.json file. Modify the settings and create a symlink to that file in ./bin folder. Name the symlink config.json.
+.. sourcecode:: shell
 
-./bin/config.json should point to ./config/userconfig.json
+  yarn run server:production
+  yarn run server:dev
+
+
+To start the frontend, use commands:
+
+.. sourcecode:: shell
+
+  yarn run start
+  yarn run dev
+
+
+Configuration
+=============
+
+Make a copy of ./config/userconfig_example.json file. Modify the settings and create a symlink to that file in ./app_back folder. Name the symlink config.json.
+
+.. sourcecode:: shell
+
+  ln -sf ./config/<modified config> ./app_back/_production.json
+
+You can also give different name to the symlink, but in that case run server with next command
+
+.. sourcecode:: shell
+
+  CONFIG_PATH='./<other name>.json' yarn run server:production
+
+
+NEED UPDATE
+
+
 
 Setup Google docs
 ============
@@ -77,7 +110,10 @@ react-material-ui.
 TODO
 ====
 
-* use ES6 stuff in server
+* check all yarn run commands
+* set up nodemon.json with correct paths
+* make it show something sensible when server is down
+* use webpack 2
 * send ok messages from server to frontend
 * use websockets for communication
 * send mails with delay, so they appear in order in sent mailg
