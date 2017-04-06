@@ -1,0 +1,20 @@
+{
+    "service": "gmail",
+    "auth": {
+        "user": "JohnDoe",
+        "pass": "****"
+    },
+    "defaultFrom": "JohnDoe@gmail.com",
+    "defaultTo": "JohnDoe@gmail.com",
+    "templates": {
+        "title": "Report {{&date}} {{&hour}}h",
+        "body": "Hello,<br/><ul>{{#task}}<li>{{.}}</li>{{/task}}</ul><br/>Regards,<br/> Firstname Lastname"
+    },
+    "spreadsheetId": "",
+    "worksheetId": "",
+    "worksheetName": "",
+    "oauth" : {
+        "email": "",
+        "keyFile": ""
+    }
+}
