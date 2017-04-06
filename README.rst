@@ -37,11 +37,7 @@ You can also give different name to the symlink, but in that case run server wit
 
 .. sourcecode:: shell
 
-  CONFIG_PATH='./<other name>.json' yarn run server:production
-
-
-NEED UPDATE
-
+  CONFIG_PATH='./<other name>.json' yarn run server
 
 
 Setup Google docs
@@ -66,14 +62,10 @@ Convert key file downloaded in previous step to PEM file
 Share the spreadsheet, add generated email
 
 Install node package edit-google-spreadsheet
-npm i edit-google-spreadsheet --save
 
-Run
-===
+.. sourcecode:: shell
 
-Run with next command:
-
-./scripts/run-server.sh
+    yarn add edit-google-spreadsheet
 
 =================
 Project structure
@@ -90,14 +82,11 @@ requests.
 How to use it
 -------------
 
-Some env variables:
+.. sourcecode:: shell
 
-* PORT=3111 - which port to listen
-* NODE_DEBUG=report-servlet - set this to `report-servlet` to display debug info
-
-Npm run commands:
-
-* **npm run server** - run server
+  yarn run server:production
+  yarn run server:dev
+  CONFIG_PATH='./<config>.json' yarn run server
 
 
 Frontend
@@ -110,12 +99,9 @@ react-material-ui.
 TODO
 ====
 
-* check all yarn run commands
-* set up nodemon.json with correct paths
 * make it show something sensible when server is down
-* use webpack 2
 * send ok messages from server to frontend
 * use websockets for communication
-* send mails with delay, so they appear in order in sent mailg
-* use better-npm-script
 * deploy to raspi
+* remove or mark already sent items
+* check how it works when backend is always on. Probably we need to redesign backend, so it starts google fetch when requested.
