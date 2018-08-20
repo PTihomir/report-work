@@ -16,7 +16,16 @@ const chalkDebug = chalk.black.bgYellow;
 
 const Spreadsheet = require('edit-google-spreadsheet');
 
-// The constructor function.
+/**
+ * The constructor function.
+ * Reads config and configures the servlet.
+ *
+ * Creates handlers. One handler is for sending report, other is for sending status.
+ *
+ * Also creates state for the servlet.
+ *
+ * @param {Object} config Config object
+ */
 function ReportServlet(config) {
   this.config = config;
   this.debug = util.debuglog(this.config.report_config.debug.debug_name);
@@ -28,19 +37,28 @@ function ReportServlet(config) {
     this.debug(chalkDebug('DEBUG mode ON.'));
   }
 
-  this.handlers = [{
-    regexp: /app\/report/i,
-    handler: this.sendReport,
-  }, {
-    regexp: /app\/status/i,
-    handler: this.sendStatus,
-  }];
+  this.handlers = [
+    {
+      regexp: /app\/report/i,
+      handler: this.sendReport,
+    },
+    {
+      regexp: /app\/status/i,
+      handler: this.sendStatus,
+    },
+    {
+      regexp: /app\/info/i,
+      handler: this.sendInfo,
+    },
+  ];
 
   this.state = {
     settings: {
       defaultMailto: config.report_config.defaultTo,
       lastDate: false,
-      documentUrl: `https://docs.google.com/a/alasdoo.com/spreadsheets/d/${config.report_config.spreadsheetId}`,
+      documentUrl: `https://docs.google.com/a/alasdoo.com/spreadsheets/d/${
+        config.report_config.spreadsheetId
+      }`,
     },
     history: undefined,
     messages: [],
@@ -53,9 +71,13 @@ function ReportServlet(config) {
 
   this.saveMessage('Server started');
   this.fetchDataFromDocs();
-};
+}
 
-ReportServlet.prototype.saveMessage = function (message) {
+/**
+ * Store message in array. Update hash.
+ * @param {String} message
+ */
+ReportServlet.prototype.saveMessage = function(message) {
   this.state.messages.push({
     tstamp: Date.now(),
     message,
@@ -65,12 +87,14 @@ ReportServlet.prototype.saveMessage = function (message) {
   this.state.hash.messages = `${Date.now()}`;
 };
 
-ReportServlet.prototype.handleRequest = function (req, res) {
-  this.config.cors_headers.forEach(({header, value}) => {
+ReportServlet.prototype.handleRequest = function(req, res) {
+  this.config.cors_headers.forEach(({ header, value }) => {
     res.setHeader(header, value);
   });
 
-  var path = ('./' + req.url.pathname).replace('//', '/').replace(/%(..)/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+  var path = ('./' + req.url.pathname)
+    .replace('//', '/')
+    .replace(/%(..)/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
 
   for (var i = 0; i < this.handlers.length; i++) {
     if (this.handlers[i].regexp.test(path)) {
@@ -80,11 +104,13 @@ ReportServlet.prototype.handleRequest = function (req, res) {
     }
   }
 
-  this.debug(chalkDebug(`Path ${req.url.pathname} not matched with any endpoint.`));
+  this.debug(
+    chalkDebug(`Path ${req.url.pathname} not matched with any endpoint.`),
+  );
   res.end();
 };
 
-ReportServlet.prototype.sendStatus = function (req, res) {
+ReportServlet.prototype.sendStatus = function(req, res) {
   var urlParts = url.parse(req.url, true);
   var query = urlParts.query;
 
@@ -102,9 +128,10 @@ ReportServlet.prototype.sendStatus = function (req, res) {
       const { rows } = this.state.history;
       response.historyHash = this.state.hash.history;
 
-      response.history = rows.slice(-10)
+      response.history = rows
+        .slice(-10)
         .reverse()
-        .map((row) => ({
+        .map(row => ({
           date: row[1],
           hour: row[3],
           task: row[2],
@@ -121,50 +148,23 @@ ReportServlet.prototype.sendStatus = function (req, res) {
   res.end();
 };
 
-ReportServlet.prototype.sendReport = function (req, res) {
+ReportServlet.prototype.sendReport = function(req, res) {
+  res.write(JSON.stringify(response));
+  res.end();
+};
+
+ReportServlet.prototype.sendInfo = function(req, res) {
   const body = [];
 
-  req.on('data', (data) => {
-    body.push(data);
-    // Too much POST data, kill the connection!
-    if (body.length > 1000) req.connection.destroy();
-  })
-  .on('end', () => {
-    const post = JSON.parse(body.join(''));
-
-    if (this.DEBUG_MODE) {
-      this.debug(chalkDebug('Got data in DEBUG mode.'));
-      this.debug(util.inspect(post, {color: true, depth: 3}));
-      return;
-    }
-
-    this.sendDataToDocs(post, (err, okRows) => {
-      if (err) {
-        this.saveMessage('Sending data to DOCS failed.');
-        res.write(JSON.stringify({
-          status: false,
-        }));
-        res.end();
-        return;
-      }
-      this.saveMessage('Sending data to DOCS succeded.');
-
-      this.fetchDataFromDocs();
-
-      this.sendMail(Object.assign({}, post, {entries: okRows}), (success) => {
-        this.saveMessage('Sending mails succeded.');
-        res.write(JSON.stringify({
-          status: success,
-        }));
-        res.end();
-      });
-    });
+  this.readSpreadsheetInfo((err, metadata) => {
+    res.write(JSON.stringify(metadata));
+    res.end();
   });
 };
 
-ReportServlet.prototype.sendMail = function (data, done) {
+ReportServlet.prototype.sendMail = function(data, done) {
   const config = this.config.report_config;
-    // create reusable transport method (opens pool of SMTP connections)
+  // create reusable transport method (opens pool of SMTP connections)
   const smtpTransport = nodemailer.createTransport({
     service: config.service,
     auth: {
@@ -179,7 +179,7 @@ ReportServlet.prototype.sendMail = function (data, done) {
 
     return {
       from: config.defaultFrom,
-      to: (data.mailto || config.defaultTo),
+      to: data.mailto || config.defaultTo,
       subject: subject,
       html: messagebody,
     };
@@ -194,7 +194,9 @@ ReportServlet.prototype.sendMail = function (data, done) {
     smtpTransport.sendMail(message, (err, response) => {
       if (err) {
         success = false;
-        this.saveMessage(`Error when sending message with title ${message.subject}`);
+        this.saveMessage(
+          `Error when sending message with title ${message.subject}`,
+        );
         this.debug(chalkError(err));
       } else {
         this.debug(chalkInfo(`Message sent: ${response.message}`));
@@ -222,129 +224,184 @@ ReportServlet.prototype.sendMail = function (data, done) {
   });
 };
 
-ReportServlet.prototype.fetchDataFromDocs = function (done) {
+ReportServlet.prototype.fetchDataFromDocs = function(done) {
   const config = this.config.report_config;
   // create reusable transport method (opens pool of SMTP connections)
-  Spreadsheet.load({
-    debug: true,
-
-    spreadsheetId: config.spreadsheetId,
-    worksheetId: config.worksheetId,
-    // worksheetName: config.worksheetName,
-    oauth: {
-      email: config.oauth.email,
-      keyFile: `${__dirname}${config.oauth.keyFile}`,
+  Spreadsheet.load(
+    {
+      debug: true,
+      spreadsheetId: config.spreadsheetId,
+      worksheetId: config.worksheetId,
+      // worksheetName: config.worksheetName,
+      oauth: {
+        email: config.oauth.email,
+        keyFile: `${__dirname}${config.oauth.keyFile}`,
+      },
     },
-  }, (err, spreadsheet) => {
-    if (err) {
-      this.saveMessage('Spreadsheet load failed.');
-      throw err;
-    }
-
-    spreadsheet.receive((err, rows, info) => {
+    (err, spreadsheet) => {
       if (err) {
-        this.saveMessage('Spreadsheet receive failed.');
+        this.saveMessage('Spreadsheet load failed.');
         throw err;
       }
 
-      this.saveMessage('Spreadsheet fetched.');
+      spreadsheet.receive((err, rows, info) => {
+        if (err) {
+          this.saveMessage('Spreadsheet receive failed.');
+          throw err;
+        }
 
-      const processRows = Object.keys(rows)
-        .map((key) => Object.assign({key: key}, rows[key]))
-        .filter((row) => typeof row[3] === 'number');
+        this.saveMessage('Spreadsheet fetched.');
 
-      this.state.history = {
-        rows: processRows,
-        info: info,
-      };
+        const processRows = Object.keys(rows)
+          .map(key => Object.assign({ key: key }, rows[key]))
+          .filter(row => typeof row[3] === 'number');
 
-      this.state.settings.lastDate = processRows[processRows.length - 1][1];
+        this.state.history = {
+          rows: processRows,
+          info: info,
+        };
 
-      // Update hash.
-      this.state.hash.history = `${Date.now()}`;
-      this.state.hash.settings = `${Date.now()}`;
+        this.state.settings.lastDate = processRows[processRows.length - 1][1];
 
-      if (done) {
-        done();
-      }
-    });
-  });
+        // Update hash.
+        this.state.hash.history = `${Date.now()}`;
+        this.state.hash.settings = `${Date.now()}`;
+
+        if (done) {
+          done();
+        }
+      });
+    },
+  );
 };
 
-ReportServlet.prototype.sendDataToDocs = function (data, done) {
+ReportServlet.prototype.sendDataToDocs = function(data, done) {
   const config = this.config.report_config;
 
   // create reusable transport method (opens pool of SMTP connections)
-  Spreadsheet.load({
-    debug: true,
-    spreadsheetId: config.spreadsheetId,
-    worksheetId: config.worksheetId,
-    worksheetName: config.worksheetName,
-    oauth: {
-      email: config.oauth.email,
-      keyFile: `${__dirname}${config.oauth.keyFile}`,
+  Spreadsheet.load(
+    {
+      debug: true,
+      spreadsheetId: config.spreadsheetId,
+      worksheetId: config.worksheetId,
+      worksheetName: config.worksheetName,
+      oauth: {
+        email: config.oauth.email,
+        keyFile: `${__dirname}${config.oauth.keyFile}`,
+      },
     },
+    (err, spreadsheet) => {
+      if (err) {
+        throw err;
+      }
 
-  }, (err, spreadsheet) => {
-    if (err) {
-      throw err;
-    }
+      const errorRows = [];
+      const updateRows = [];
+      const newRows = [];
+      const sendData = {};
 
-    const errorRows = [];
-    const updateRows = [];
-    const newRows = [];
-    const sendData = {};
+      // Group entries by error, update or new.
+      data.entries.forEach(entry => {
+        const oldRow = this.state.history.rows.find(
+          row => new Date(row[1]).getTime() === new Date(entry.date).getTime(),
+        );
 
-    // Group entries by error, update or new.
-    data.entries
-      .forEach((entry) => {
-        const oldRow = this.state.history.rows
-          .find((row) => new Date(row[1]).getTime() === new Date(entry.date).getTime());
-
-        if (oldRow) { // Entry with the same date exist, it should update it.
-          if (oldRow[3] !== entry.hour) { // If hours are different, then send a notification.
+        if (oldRow) {
+          // Entry with the same date exist, it should update it.
+          if (oldRow[3] !== entry.hour) {
+            // If hours are different, then send a notification.
             errorRows.push(entry);
-            this.debug(chalkError(`For ${entry.date} the old and the new hour is different.`), oldRow[3], '->', entry.hour);
-            this.saveMessage(`For ${entry.date} hours are different. ${oldRow[3]} -> ${entry.hour}`);
+            this.debug(
+              chalkError(
+                `For ${entry.date} the old and the new hour is different.`,
+              ),
+              oldRow[3],
+              '->',
+              entry.hour,
+            );
+            this.saveMessage(
+              `For ${entry.date} hours are different. ${oldRow[3]} -> ${
+                entry.hour
+              }`,
+            );
           } else {
-            updateRows.push(Object.assign({key: oldRow.key}, entry));
+            updateRows.push(Object.assign({ key: oldRow.key }, entry));
           }
-        } else {      // New row is defined
+        } else {
+          // New row is defined
           newRows.push(entry);
         }
       });
 
-    this.debug(chalkInfo(`Error ${errorRows.length}; Update ${updateRows.length}; New ${newRows.length}`));
+      this.debug(
+        chalkInfo(
+          `Error ${errorRows.length}; Update ${updateRows.length}; New ${
+            newRows.length
+          }`,
+        ),
+      );
 
-    updateRows.forEach(({hour, date, task, key}) => {
-      sendData[key] = {
-        3: hour,
-        2: task.join(';'),
-      };
-    });
+      updateRows.forEach(({ hour, date, task, key }) => {
+        sendData[key] = {
+          3: hour,
+          2: task.join(';'),
+        };
+      });
 
-    newRows.forEach(({hour, date, task}, idx) => {
-      sendData[this.state.history.info.nextRow + idx] = [[
-        date,
-        task.join(';'),
-        hour,
-      ]];
-    });
+      newRows.forEach(({ hour, date, task }, idx) => {
+        sendData[this.state.history.info.nextRow + idx] = [
+          [date, task.join(';'), hour],
+        ];
+      });
 
-    spreadsheet.add(sendData);
+      spreadsheet.add(sendData);
 
-    this.debug(chalkOk('Send data:'));
-    this.debug(util.inspect(sendData, {color: true}));
+      this.debug(chalkOk('Send data:'));
+      this.debug(util.inspect(sendData, { color: true }));
 
-    spreadsheet.send((err) => {
+      spreadsheet.send(err => {
+        if (err) {
+          done(err);
+        }
+
+        this.debug(chalkOk('Updated Success!'));
+        done(null, [].concat(updateRows, newRows));
+      });
+    },
+  );
+};
+
+/**
+ * Intended for debug and to use directly with server.
+ *
+ * Use Postman to create a POST request with url /
+ * @param {*} data
+ * @param {*} done
+ */
+ReportServlet.prototype.readSpreadsheetInfo = function(done) {
+  const config = this.config.report_config;
+
+  // create reusable transport method (opens pool of SMTP connections)
+  Spreadsheet.load(
+    {
+      debug: true,
+      spreadsheetId: config.spreadsheetId,
+      worksheetName: config.worksheetName,
+      oauth: {
+        email: config.oauth.email,
+        keyFile: `${__dirname}${config.oauth.keyFile}`,
+      },
+    },
+    async (err, spreadsheet) => {
       if (err) {
-        done(err);
+        throw err;
       }
 
-      this.debug(chalkOk('Updated Success!'));
-      done(null, [].concat(updateRows, newRows));
-    });
-  });
+      spreadsheet.receive((err, rows, info) => {
+        done(null, info);
+      });
+    },
+  );
 };
 
 module.exports = ReportServlet;
